@@ -1,0 +1,179 @@
+
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#673ab7">
+  <title>Hindi Galaxy</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f0ff;
+      color: #222;
+    }
+    header {
+      background: #673ab7;
+      color: white;
+      padding: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    main { padding: 18px; max-width: 650px; margin: auto; }
+    select, input, button {
+      width: 100%;
+      padding: 13px;
+      margin: 7px 0;
+      border: 1px solid #ccc;
+      border-radius: 9px;
+      font-size: 16px;
+    }
+    button {
+      background: #673ab7;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .chat {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      min-height: 220px;
+      margin-top: 15px;
+    }
+    .message { margin: 12px 0; line-height: 1.5; }
+    .user { color: #673ab7; }
+    .answer { color: #176b36; }
+    .tools { display: flex; gap: 8px; }
+    .tools button { flex: 1; }
+    #photoPreview { max-width: 100%; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h2>🌌 Hindi Galaxy</h2>
+    <button style="width:auto;background:white;color:#673ab7"
+      onclick="alert('Settings जल्द उपलब्ध होंगे')">⋮</button>
+  </header>
+
+  <main>
+    <h3>अपनी कक्षा चुनें</h3>
+    <select id="classSelect">
+      <option value="">कक्षा चुनें</option>
+      <option>Class 9</option>
+      <option>Class 10</option>
+      <option>Class 11</option>
+      <option>Class 12</option>
+    </select>
+
+    <h3>अपना विषय चुनें</h3>
+    <select id="subjectSelect">
+      <option value="">विषय चुनें</option>
+      <option>Hindi</option>
+      <option>Hindi Background</option>
+      <option>Science</option>
+      <option>Mathematics</option>
+      <option>English</option>
+    </select>
+
+    <div class="chat" id="chat">
+      <h3>नमस्ते! 🌸</h3>
+      <p>Hindi Galaxy में आपका स्वागत है। अपना सवाल लिखें।</p>
+    </div>
+
+    <input id="question" placeholder="अपना सवाल यहाँ लिखें...">
+
+    <div class="tools">
+      <button onclick="sendQuestion()">भेजें</button>
+      <button onclick="startVoice()">🎤 बोलें</button>
+    </div>
+
+    <input type="file" id="photo" accept="image/*"
+      onchange="showPhoto(event)">
+    <img id="photoPreview" alt="चुनी गई तस्वीर">
+
+    <p>🔊 उत्तर सुनने के लिए नीचे Replay दबाएँ।</p>
+    <button onclick="replayAnswer()">🔊 Replay</button>
+    <button onclick="speechSynthesis.cancel()">🔇 Mute</button>
+  </main>
+
+  <script>
+    let lastAnswer = "";
+
+    function sendQuestion() {
+      const q = document.getElementById("question").value.trim();
+      const cls = document.getElementById("classSelect").value;
+      const sub = document.getElementById("subjectSelect").value;
+
+      if (!cls || !sub || !q) {
+        alert("कृपया कक्षा, विषय और सवाल चुनें।");
+        return;
+      }
+
+      const chat = document.getElementById("chat");
+      chat.innerHTML +=
+        '<div class="message user"><b>आप:</b> ' +
+        escapeText(q) + '</div>';
+
+      lastAnswer = "आपका सवाल मिला है। असली AI उत्तर देने की सुविधा जोड़ना अभी बाकी है।";
+      chat.innerHTML +=
+        '<div class="message answer"><b>Hindi Galaxy:</b> ' +
+        lastAnswer + '</div>';
+
+      document.getElementById("question").value = "";
+      speak(lastAnswer);
+    }
+
+    function escapeText(s) {
+      const d = document.createElement("div");
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function speak(text) {
+      speechSynthesis.cancel();
+      const msg = new SpeechSynthesisUtterance(text);
+      msg.lang = "hi-IN";
+      speechSynthesis.speak(msg);
+    }
+
+    function replayAnswer() {
+      if (lastAnswer) speak(lastAnswer);
+    }
+
+    function startVoice() {
+      const Recognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!Recognition) {
+        alert("इस ब्राउज़र में Voice Input उपलब्ध नहीं है।");
+        return;
+      }
+      const rec = new Recognition();
+      rec.lang = "hi-IN";
+      rec.onresult = e => {
+        document.getElementById("question").value =
+          e.results[0][0].transcript;
+      };
+      rec.start();
+    }
+
+    function showPhoto(event) {
+      const file = event.target.files[0];
+      if (file) {
+        document.getElementById("photoPreview").src =
+          URL.createObjectURL(file);
+      }
+    }
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js").catch(console.error);
+      });
+    }
+  </script>
+</body>
+</html>
